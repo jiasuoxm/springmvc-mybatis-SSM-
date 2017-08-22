@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <import resource="applicationContext-dao.xml"/>
+
+    <!--事务管理器-->
+    <!--对mybatis操作数据库进行事务控制，spring使用jdbc的事务控制类-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!--由于是操作数据库才有了事务控制，所以需要数据源-->
+        <!--配置数据源
+            dataSource在applicationContext-dao.xml中配置了
+        -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--通知-->
+    <!--通知给事务管理器-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <!--传播行为-->
+            <!--REQUIRED表示必须使用事务-->
+            <tx:method name="save" propagation="REQUIRED"/>
+            <tx:method name="delete" propagation="REQUIRED"/>
+            <tx:method name="update" propagation="REQUIRED"/>
+            <tx:method name="insert" propagation="REQUIRED"/>
+            <!--SUPPORTS表示支持事务，有就事务，没有就无所谓，这些不需要spring进行事务控制-->
+            <tx:method name="find" propagation="SUPPORTS" read-only="true"/>
+            <tx:method name="get" propagation="SUPPORTS" read-only="true"/>
+            <tx:method name="select" propagation="SUPPORTS" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--谁去调用这个通知呢? aop-->
+    <!--aop-->
+    <aop:config>
+        <!--我执行哪个service方法，把这个切面切住，通知上面的txAdvice-->
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.tingfeng.ssm.service.impl.*.*(..))"/>
+    </aop:config>
+
+
+
+</beans>

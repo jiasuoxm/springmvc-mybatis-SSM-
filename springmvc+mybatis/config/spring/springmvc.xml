@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <!--配置读取properties文件的编码方式-->
+    <context:property-placeholder location="classpath:*.properties" file-encoding="UTF-8"/>
+
+    <!--配置RESTful风格的前端控制器的时候，需要在springmvc中配置静态资源解析器-->
+    <!--静态资源解析
+    包括：js，css，img...
+    这样就可以进行静态资源的访问，包括子目录
+    -->
+    <mvc:resources mapping="/js/**" location="/js/"></mvc:resources>
+    <mvc:resources mapping="/img/**" location="/img/"></mvc:resources>
+
+
+
+    <!--配置组件扫描器，扫描controller，service，等组件-->
+    <context:component-scan base-package="com.tingfeng.ssm.controller"/>
+    <!--配置mvc注解驱动-->
+    <!--conversion-service="conversionService"就是为了配置自定义参数绑定-->
+    <mvc:annotation-driven conversion-service="conversionService" validator="validator"></mvc:annotation-driven>
+    <!--配置视图解析器-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/jsp/"></property>
+        <property name="suffix" value=".jsp"></property>
+    </bean>
+
+    <!--自定义参数绑定
+    FormattingConversionServiceFactoryBean表示的是spring提供的converter对外的一个接口，可以在其中注入自己写的参数绑定
+    -->
+    <bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+        <!--转换器-->
+        <property name="converters">
+            <list>
+                <!--日期类型的转换器-->
+                <bean class="com.tingfeng.ssm.controller.converter.CustomDateConverter"/>
+                <!--字符串转换，去前后空格-->
+            </list>
+        </property>
+
+    </bean>
+
+    <!-- 校验器 -->
+    <bean id="validator"
+          class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+        <!-- hibernate校验器-->
+        <property name="providerClass" value="org.hibernate.validator.HibernateValidator" />
+        <!-- 指定校验使用的资源文件，在文件中配置校验错误信息，如果不指定则默认使用classpath下的ValidationMessages.properties -->
+        <property name="validationMessageSource" ref="messageSource" />
+    </bean>
+    <!-- 校验错误信息配置文件 -->
+    <bean id="messageSource"
+          class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <!-- 资源文件名-->
+        <property name="basenames">
+            <list>
+                <!--这里报错不要管他，只能这么写-->
+                <value>classpath:CustomValidationMessages</value>
+            </list>
+        </property>
+        <!-- 资源文件编码格式 -->
+        <!--<property name="fileEncodings" value="utf-8">-->
+        <!--</property>-->
+        <!--<property name="fileEncodings" >-->
+            <!--<props>-->
+                <!--<prop key="classpath:ValErrMsg">UTF-8</prop>-->
+            <!--</props>-->
+        <!--</property>-->
+        <property name="defaultEncoding" value="utf-8" />
+        <!-- 对资源文件内容缓存时间，单位秒 -->
+        <property name="cacheSeconds" value="120" />
+    </bean>
+    <!-- 全局异常处理器
+    只要实现HandlerExceptionResolver接口就是全局异常处理器
+     -->
+    <bean class="com.tingfeng.ssm.exception.CustomExceptionResolver"></bean>
+
+
+
+    <!--文件上传解析器-->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <!--上传文件的最大尺寸为5M-->
+        <property name="maxUploadSize">
+            <value>5242880</value>
+        </property>
+    </bean>
+
+    <!--springmvc的拦截器-->
+    <mvc:interceptors>
+        <!--多个拦截器，顺序执行-->
+        <!--/**表示拦截所有的url包括子url路径-->
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.tingfeng.ssm.interceptor.LoginInterceptor"/>
+        </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.tingfeng.ssm.interceptor.HandlerInterceptor1"/>
+        </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.tingfeng.ssm.interceptor.HandlerInterceptor2"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+</beans>
+
